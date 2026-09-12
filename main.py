@@ -14,7 +14,7 @@ def valide():
     pass
 
 def sign_up_login_modal():
-    st.title("SkillSprint")
+    st.title("SkillSprint") #STYLING
 
     lgnorsgn  = st.radio("New here ?", options = ("Yes", "No")) 
     if lgnorsgn == "Yes":
@@ -68,26 +68,74 @@ def sign_up_login_modal():
             #Simple form validation
             #Adds account to firebase, creates user object, and store user information in firebase database and loads main page   
             if form_valid:
-                  New_user = lib.Student(username, campus, email, password, short_bio, student_repo_link, 0)
-                  lib.auth.create_user_with_email_and_password(email, password)
-                  st.session_state['user'] = New_user
-                   
+                  New_user = lib.Student(username, campus, email, password, short_bio, student_repo_link, 0, student_or_lecturer)
+                  auth_user = lib.auth.create_user_with_email_and_password(email, password)
+                  user_id = auth_user["localId"]
+                  lib.db.child("user").child(user_id).set( {"username": username, "campus": campus, "email": email, "short_bio": short_bio, "student_repo_link": student_repo_link, "rank": 0, "role": student_or_lecturer})
+                  st.session_state['user'] = New_user 
+     #LOGIN MODAL              
     else:
         st.subheader("Login")
         lg_form   = st.form("login")
-        username  = lg_form.text_input("Username :")
+        email  = lg_form.text_input("Email :")
         password  = lg_form.text_input("Password :", type="password")
         #Check if user exists in firebase database and validate password, if valid load main page, else show error message
         if lg_form.form_submit_button("Submit"):
             try:
-                user = lib.auth.sign_in_with_email_and_password(username, password)
+                user = lib.auth.sign_in_with_email_and_password(email, password)
                 st.session_state['successful_log_sign'] = True
                 st.success("Login successful")
                 st.session_state['user'] = user
+                #Check if user is a student or lecturer and load the appropriate page
+                user_id = user["localId"]
+                user_data = lib.db.child("user").child(user_id).get().val()
+                if user_data:
+                    if user_data.get("role") == "Student":
+                        Student_page(user)
+                    else:
+                        Lecturer_page(user)
             except:
                 st.error("Invalid username or password")
+     #LOGIN MODAL 
+
+#STUDENT PAGE
+def Student_page(Current_user):
+        user_data = lib.db.child("user").child(Current_user["localId"]).get().val()
+        print("ON STUDENT PAGE")
+
+        #User information
+        name      = user_data["username"]
+        email     = user_data["email"]
+        campus    = user_data["campus"]
+        rank      = user_data["rank"]
+        short_bio = user_data["short_bio"]
+        repo_link = user_data["student_repo_link"]
+        #User information
+
+        #Start working on the student page, add a simple leaderboard that shows the top 10 students based on their rank.
+        st.title(f"Welcome, {name}!")
+#STUDENT PAGE
+#LECTURER PAGE
+def Lecturer_page(Current_user):
+      user_data = lib.db.child("user").child(Current_user["localId"]).get().val()
+      print("ON LECTURER PAGE")
+
+      #User information
+      name      = user_data["username"]
+      email     = user_data["email"]
+      campus    = user_data["campus"]
+      rank      = user_data["rank"]
+      short_bio = user_data["short_bio"]
+      repo_link = user_data["student_repo_link"]
+      #User information
+      st.title(f"Welcome, {name}!")
+      #Make a the lecturer page that shows a list of all students and their information, and allows the lecturer to update the students rank with a simple form.
+#LECTURER PAGE
 
 sign_up_login_modal()
+
+
+
 
 #SIGN_UP/LOGIN MODAL
 #MAINPAGE
