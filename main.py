@@ -24,7 +24,7 @@ def sign_up_login_modal():
         st.subheader("Sign up")
         sgn_form   = st.form("sign up")
         username  = sgn_form.text_input("Username :")
-        email     = sgn_form.text_input("Email :", type="email")
+        email     = sgn_form.text_input("Email :")
         password  = sgn_form.text_input("Password :", type="password")
         confirm_password  = sgn_form.text_input("Confirm password :", type="password")
         campus    = sgn_form.radio("What campus are you from : ", options= ("Newtown","Brynston","Umhlanga"))
