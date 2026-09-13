@@ -1,5 +1,6 @@
 import lib as lib
 import streamlit as st
+import ai
 
 #This a collaboration project, so anyone is welcome to ask for help.
 
@@ -117,8 +118,43 @@ def Student_page(Current_user):
         #Database iformation
         #Start working on the student page, add a simple leaderboard that shows the top 10 students based on their rank.
         st.title(f"Welcome, {name}!")
+
+
+        # AI PROMPT
+        prompt = f"""
+        You are an AI assistant for SkillSprint.
+
+        Create a weekly software development project brief for this student.
+
+        Student name: {name}
+        Campus: {campus}
+        Bio: {short_bio}
+        Current rank: {rank}
+        Repository: {repo_link}
+
+        The project should help the student improve their software
+        development skills and should be realistic for a student to complete
+        within one week.
+
+        Include:
+        1. Project title
+        2. Project description
+        3. Main objectives
+        4. Suggested technologies
+        5. Requirements
+        6. Expected deliverables
+        """
+
+        if st.button("Generate Weekly Project"):
+                with st.spinner("Generating your project..."):
+                        response = ai.ask_ai(prompt)
+
+                st.subheader("Your Weekly AI Project")
+                st.write(response)
+
         st.title(f"Here are all the users in the database {all_students}")
 #STUDENT PAGE
+
 #LECTURER PAGE
 def Lecturer_page(Current_user):
       user_data = lib.db.child("user").child(Current_user["localId"]).get().val()
@@ -136,6 +172,36 @@ def Lecturer_page(Current_user):
         
       #Make a the lecturer page that shows a list of all students and their information, and allows the lecturer to update the students rank with a simple form.
       all_students = lib.db.child("user").get().val()
+
+      # AI PROMPT
+      prompt = f"""
+      You are an AI teaching assistant for SkillSprint.
+
+      Analyse the students currently registered on the platform.
+
+      Student data:
+      {all_students}
+
+      Provide the lecturer with:
+
+      1. A summary of the students
+      2. Students who may need additional support
+      3. Students who appear to be performing strongly
+      4. Suggested areas for improvement
+      5. Suggestions for a weekly software development activity
+      6. General recommendations for the lecturer
+
+      Do not make assumptions about students that cannot be supported
+      by the provided data.
+      """
+
+      if st.button("Generate AI Student Analysis"):
+            with st.spinner("Analysing students..."):
+                  response = ai.ask_ai(prompt)
+
+            st.subheader("AI Student Analysis")
+            st.write(response)
+            
       st.title(f"Here are all the students in the database: {all_students}")
 #LECTURER PAGE
 
