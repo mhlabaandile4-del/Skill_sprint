@@ -1,6 +1,6 @@
 import lib as lib
 import streamlit as st
-import ai
+import pandas as pd
 
 #This a collaboration project, so anyone is welcome to ask for help.
 
@@ -75,7 +75,8 @@ def sign_up_login_modal():
                         auth_user = lib.auth.create_user_with_email_and_password(email, password)
                         user_id = auth_user["localId"]
                         lib.db.child("user").child(user_id).set( {"username": username, "campus": campus, "email": email, "short_bio": short_bio, "student_repo_link": student_repo_link, "rank": 0, "role": student_or_lecturer})
-                        st.session_state['user'] = New_user 
+                        st.session_state['user'] = auth_user
+                        st.session_state['user_role'] = student_or_lecturer
     #LOGIN MODAL              
     else:
                 st.subheader("Login")
@@ -114,45 +115,62 @@ def Student_page(Current_user):
         repo_link = user_data["student_repo_link"]
         #User information
         #Database information
-        all_students = lib.db.child("user").get().val()
+        all_users    = lib.db.child("user").get().val() or {}
+        all_students = {k: v for k, v in all_users.items() if v.get("role") == "Student"}
         #Database iformation
         #Start working on the student page, add a simple leaderboard that shows the top 10 students based on their rank.
         st.title(f"Welcome, {name}!")
 
 
         # AI PROMPT
-        prompt = f"""
-        You are an AI assistant for SkillSprint.
+       
 
-        Create a weekly software development project brief for this student.
+        st.title("Leaderboard")      
+        st.write("Click any row to view full profile details")
+        
+        if all_students:
+                raw_data = list(all_students.values())
+                df       = pd.DataFrame(raw_data)
+        
+                df       = df.rename(columns={"username": "student_name", "rank": "score"})
+                df       = df.sort_values(by="score", ascending=False).reset_index(drop = True)
+                df["Rank"] = df.index + 1
+        
+                df["Rank"] = df["Rank"].map({1: "1", 2: "2", 3: "3"}).fillna(df["Rank"])
+        
+                display_cols =["Rank", "student_name" , "score"]
+                other_cols   = [col for col in df.columns if col not in display_cols]
+                ordered_df   = df[display_cols + other_cols]
 
-        Student name: {name}
-        Campus: {campus}
-        Bio: {short_bio}
-        Current rank: {rank}
-        Repository: {repo_link}
+                selection = st.dataframe(
+                        ordered_df[display_cols],
+                        use_container_width=True,
+                        hide_index=True,
+                        on_select= "rerun",
+                        selection_mode= "single-row"
+                )
+                with st.sidebar:
+                        selected_rows = selection.get("selection", {}).get("rows", [])
 
-        The project should help the student improve their software
-        development skills and should be realistic for a student to complete
-        within one week.
+                        if selected_rows:
+                                row_index    = selected_rows[0]
+                                user_profile = ordered_df.iloc[row_index]
 
-        Include:
-        1. Project title
-        2. Project description
-        3. Main objectives
-        4. Suggested technologies
-        5. Requirements
-        6. Expected deliverables
-        """
+                                st.header(f"{user_profile["student_name"]}")
+                                st.subheader(f"Rank {user_profile["Rank"]} ({user_profile["score"]} pts)")
+                                st.divider()
 
-        if st.button("Generate Weekly Project"):
-                with st.spinner("Generating your project..."):
-                        response = ai.ask_ai(prompt)
+                                st.markdown("ALL STUDENT DATA")
+                                for key in other_cols:
+                                        clean_key = key.replace("_", " ").title()
+                                        st.write(f"{clean_key}: {user_profile[key]}")
 
-                st.subheader("Your Weekly AI Project")
-                st.write(response)
+                        else:
+                                st.header("Profile viewer")
+                                st.info("Click a student on the main leaderboard table to see their full profile")
 
-        st.title(f"Here are all the users in the database {all_students}")
+        else:
+                st.info("The database is currently empty")
 #STUDENT PAGE
 
 #LECTURER PAGE
@@ -174,35 +192,55 @@ def Lecturer_page(Current_user):
       all_students = lib.db.child("user").get().val()
 
       # AI PROMPT
-      prompt = f"""
-      You are an AI teaching assistant for SkillSprint.
+      st.title("Leaderboard")      
+      st.write("Click any row to view full profile details")
+              
+      if all_students:
+                raw_data = list(all_students.values())
+                df       = pd.DataFrame(raw_data)
+              
+                df       = df.rename(columns={"username": "student_name", "rank": "score"})
+                df       = df.sort_values(by="score", ascending=False).reset_index(drop = True)
+                df["Rank"] = df.index + 1
+              
+                df["Rank"] = df["Rank"].map({1: "1", 2: "2", 3: "3"}).fillna(df["Rank"])
+              
+                display_cols =["Rank", "student_name" , "score"]
+                other_cols   = [col for col in df.columns if col not in display_cols]
+                ordered_df   = df[display_cols + other_cols]
+      
+                selection = st.dataframe(
+                        ordered_df[display_cols],
+                        use_container_width=True,
+                        hide_index=True,
+                        on_select= "rerun",
+                        selection_mode= "single-row"
+                      )
+                with st.sidebar:
+                        selected_rows = selection.get("selection", {}).get("rows", [])
+      
+                        if selected_rows:
+                                row_index    = selected_rows[0]
+                                user_profile = ordered_df.iloc[row_index]
+      
+                                st.header(f"{user_profile["student_name"]}")
+                                st.subheader(f"Rank {user_profile["Rank"]} ({user_profile["score"]} pts)")
+                                st.divider()
+      
+                                st.markdown("ALL STUDENT DATA")
+                                for key in other_cols:
+                                        clean_key = key.replace("_", " ").title()
+                                        st.write(f"{clean_key}: {user_profile[key]}")
+      
+                        else:
+                                st.header("Profile viewer")
+                                st.info("Click a student on the main leaderboard table to see their full profile")
+      
+      else:
+        st.info("The database is currently empty")
+      
 
-      Analyse the students currently registered on the platform.
 
-      Student data:
-      {all_students}
-
-      Provide the lecturer with:
-
-      1. A summary of the students
-      2. Students who may need additional support
-      3. Students who appear to be performing strongly
-      4. Suggested areas for improvement
-      5. Suggestions for a weekly software development activity
-      6. General recommendations for the lecturer
-
-      Do not make assumptions about students that cannot be supported
-      by the provided data.
-      """
-
-      if st.button("Generate AI Student Analysis"):
-            with st.spinner("Analysing students..."):
-                  response = ai.ask_ai(prompt)
-
-            st.subheader("AI Student Analysis")
-            st.write(response)
-            
-      st.title(f"Here are all the students in the database: {all_students}")
 #LECTURER PAGE
 
 #PAGE NAVIGATION LOGIC
