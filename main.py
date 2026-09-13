@@ -238,7 +238,7 @@ def Lecturer_page(Current_user):
       
       else:
         st.info("The database is currently empty")
-      
+      #END OF lEADERBOARD
 
 
 #LECTURER PAGE
