@@ -4,8 +4,8 @@ import re
 from google import genai
 
 
-GEMINI_API_KEY = "AQ.Ab8RN6JlfFhdcxeussDqYIwKAyJ67TL6ojq9x3OcEZdGJgiuDA"
-GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_API_KEY = "AQ.Ab8RN6K7dhgGc4Mvnf5uXtrCwKQ0qBdOKKyBPMcfqwRynTi8Jw"
+GEMINI_MODEL = "gemini-3.5-flash"
 
 
 def normalize_api_key(raw_key):
@@ -13,7 +13,7 @@ def normalize_api_key(raw_key):
 	if not value:
 		return ""
 
-	# Accept both AIza-prefixed keys and AQ. prefixed keys from Google AI Studio
+	
 	if value.startswith("AIza") or value.startswith("AQ."):
 		return value
 
