@@ -1,9 +1,14 @@
 import lib as lib
 import streamlit as st
 import pandas as pd
+from ai import get_project_idea
 
 #This a collaboration project, so anyone is welcome to ask for help.
 
+if "project_idea" not in st.session_state:
+        st.session_state["project_idea"] = None
+if "project_idea_loading" not in st.session_state:
+        st.session_state["project_idea_loading"] = False
 if "successful_log_sign" not in st.session_state:
         st.session_state["successful_log_sign"] = False
 if "user" not in st.session_state:
@@ -12,12 +17,33 @@ if "user_role" not in st.session_state:
         st.session_state["user_role"] = None
 
 
-         
+def ensure_project_idea():
+        if st.session_state.get("project_idea") is not None:
+                return
+
+        if st.session_state.get("project_idea_loading"):
+                st.info("Generating your project idea, please wait...")
+                return
+
+        st.session_state["project_idea_loading"] = True
+        try:
+                with st.spinner("Generating your project idea..."):
+                        st.session_state["project_idea"] = get_project_idea()
+        finally:
+                st.session_state["project_idea_loading"] = False
+
+
+#print(project_idea)         
 
 #SIGN_UP/LOGIN MODAL
 def sign_up_login_modal():
     successful_log_sign = False #If true, the main page will be displayed with some user information
+    ensure_project_idea()
     st.title("SkillSprint") #STYLING
+
+    if st.session_state.get("project_idea_loading"):
+        st.info("Generating your project idea before login...")
+        st.caption("Please wait a moment while we prepare the challenge.")
 
     lgnorsgn  = st.radio("New here ?", options = ("Yes", "No")) 
     if lgnorsgn == "Yes":
@@ -122,8 +148,21 @@ def Student_page(Current_user):
         st.title(f"Welcome, {name}!")
 
 
-        # AI PROMPT
-       
+        ensure_project_idea()
+        if st.session_state.get("project_idea") is not None:
+                st.header(st.session_state["project_idea"])
+
+        with st.form("update_repository"):
+                updated_repo_link = st.text_input("Student repository link", value=repo_link)
+                if st.form_submit_button("Save repository link"):
+                        if not updated_repo_link.strip():
+                                st.error("Repository link cannot be empty")
+                        else:
+                                lib.db.child("user").child(Current_user["localId"]).update({
+                                        "student_repo_link": updated_repo_link.strip()
+                                })
+                                st.success("Repository link updated")
+                                st.rerun()
 
         st.title("Leaderboard")      
         st.write("Click any row to view full profile details")
@@ -156,8 +195,8 @@ def Student_page(Current_user):
                                 row_index    = selected_rows[0]
                                 user_profile = ordered_df.iloc[row_index]
 
-                                st.header(f"{user_profile["student_name"]}")
-                                st.subheader(f"Rank {user_profile["Rank"]} ({user_profile["score"]} pts)")
+                                st.header(user_profile["student_name"])
+                                st.subheader(f"Rank {user_profile['Rank']} ({user_profile['score']} pts)")
                                 st.divider()
 
                                 st.markdown("ALL STUDENT DATA")
@@ -189,9 +228,32 @@ def Lecturer_page(Current_user):
       st.title(f"Welcome, {name}!")
         
       #Make a the lecturer page that shows a list of all students and their information, and allows the lecturer to update the students rank with a simple form.
-      all_students = lib.db.child("user").get().val()
+      all_users = lib.db.child("user").get().val() or {}
+      all_students = {k: v for k, v in all_users.items() if v.get("role") == "Student"}
 
-      # AI PROMPT
+      if all_students:
+                student_ids = list(all_students.keys())
+                selected_student_id = st.selectbox(
+                        "Student",
+                        student_ids,
+                        format_func=lambda student_id: all_students[student_id].get("username", student_id)
+                )
+                selected_student = all_students[selected_student_id]
+                with st.form("update_student_rank"):
+                        updated_rank = st.number_input(
+                                "Rank score",
+                                min_value=0,
+                                value=int(selected_student.get("rank", 0)),
+                                step=1
+                        )
+                        if st.form_submit_button("Save student rank"):
+                                lib.db.child("user").child(selected_student_id).update({
+                                        "rank": int(updated_rank)
+                                })
+                                st.success("Student rank updated")
+                                st.rerun()
+
+      
       st.title("Leaderboard")      
       st.write("Click any row to view full profile details")
               
@@ -223,8 +285,8 @@ def Lecturer_page(Current_user):
                                 row_index    = selected_rows[0]
                                 user_profile = ordered_df.iloc[row_index]
       
-                                st.header(f"{user_profile["student_name"]}")
-                                st.subheader(f"Rank {user_profile["Rank"]} ({user_profile["score"]} pts)")
+                                st.header(user_profile["student_name"])
+                                st.subheader(f"Rank {user_profile['Rank']} ({user_profile['score']} pts)")
                                 st.divider()
       
                                 st.markdown("ALL STUDENT DATA")
