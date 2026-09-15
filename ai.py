@@ -9,15 +9,15 @@ GEMINI_MODEL = "gemini-1.5-flash"
 
 
 def normalize_api_key(raw_key):
-        value = str(raw_key or "").strip().strip('"').strip("'")
-        if not value:
-                return ""
+	value = str(raw_key or "").strip().strip('"').strip("'")
+	if not value:
+		return ""
 
-        match = re.search(r"AIza[0-9A-Za-z_-]{30,}", value)
-        if match:
-                return match.group(0)
+	# Accept both AIza-prefixed keys and AQ. prefixed keys from Google AI Studio
+	if value.startswith("AIza") or value.startswith("AQ."):
+		return value
 
-        return value
+	return value
 
 
 PROJECT_PROMPT = """You are an expert technical educator and career coach specializing in helping university students and recent graduates build job-ready portfolios.
@@ -43,25 +43,25 @@ Rules:
 """
 
 FALLBACK_PROJECT_IDEA = (
-        "Build a small, polished project that demonstrates a current technical "
-        "skill and publish it to GitHub."
+	"Build a small, polished project that demonstrates a current technical "
+	"skill and publish it to GitHub."
 )
 
 
 def get_project_idea(prompt=PROJECT_PROMPT):
-        try:
-                key = normalize_api_key(GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", ""))
-                if not key or len(key) < 20 or not key.startswith("AIza"):
-                        print("AI key is missing or invalid. Set the GEMINI_API_KEY environment variable to a valid Google AI Studio key.")
-                        return FALLBACK_PROJECT_IDEA
+	try:
+		key = normalize_api_key(GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", ""))
+		if not key or len(key) < 20:
+			print("AI key is missing or invalid. Set the GEMINI_API_KEY environment variable to a valid Google AI Studio key.")
+			return FALLBACK_PROJECT_IDEA
 
-                client = genai.Client(api_key=key)
-                response = client.models.generate_content(
-                        model=GEMINI_MODEL,
-                        contents=prompt,
-                )
-                text = getattr(response, "text", "")
-                return text.strip() if isinstance(text, str) and text.strip() else FALLBACK_PROJECT_IDEA
-        except Exception as error:
-                print(f"AI project request failed: {error}")
-                return FALLBACK_PROJECT_IDEA
+		client = genai.Client(api_key=key)
+		response = client.models.generate_content(
+			model=GEMINI_MODEL,
+			contents=prompt,
+		)
+		text = getattr(response, "text", "")
+		return text.strip() if isinstance(text, str) and text.strip() else FALLBACK_PROJECT_IDEA
+	except Exception as error:
+		print(f"AI project request failed: {error}")
+		return FALLBACK_PROJECT_IDEA
