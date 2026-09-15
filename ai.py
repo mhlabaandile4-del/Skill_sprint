@@ -60,8 +60,24 @@ def get_project_idea(prompt=PROJECT_PROMPT):
 			model=GEMINI_MODEL,
 			contents=prompt,
 		)
-		text = getattr(response, "text", "")
-		return text.strip() if isinstance(text, str) and text.strip() else FALLBACK_PROJECT_IDEA
+		
+		# Properly extract text from Gemini API response
+		# The response object has a .text attribute that contains the generated content
+		text = response.text if hasattr(response, 'text') else ""
+		
+		# Debug logging to diagnose issues
+		print(f"DEBUG: Response type: {type(response)}")
+		print(f"DEBUG: Response text length: {len(text) if text else 0}")
+		
+		# Return the text if it's valid, otherwise use fallback
+		if text and isinstance(text, str) and text.strip():
+			return text.strip()
+		else:
+			print("WARNING: Received empty response from Gemini API")
+			return FALLBACK_PROJECT_IDEA
+			
 	except Exception as error:
 		print(f"AI project request failed: {error}")
+		import traceback
+		traceback.print_exc()
 		return FALLBACK_PROJECT_IDEA
