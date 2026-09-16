@@ -1,17 +1,18 @@
 import pyrebase
 import jwt
 from auth import create_jwt_token, verify_jwt_token
+from config import require_setting
 
 # FIREBASE CONFIGURATION
 firebaseConfig = {
-    'apiKey': "AIzaSyD1tM5MWpg09sYYYAX0IO8ifdp7QG-SYUA",
-    'authDomain': "skillsprint-cf16f.firebaseapp.com",
-    'databaseURL': "https://skillsprint-cf16f-default-rtdb.europe-west1.firebasedatabase.app/",
-    'projectId': "skillsprint-cf16f",
-    'storageBucket': "skillsprint-cf16f.firebasestorage.app",
-    'messagingSenderId': "137896376970",
-    'appId': "1:137896376970:web:6cf8b0d255e2981c100b73",
-    'measurementId': "G-92Y6Y9J966"
+    'apiKey': require_setting('FIREBASE_API_KEY'),
+    'authDomain': require_setting('FIREBASE_AUTH_DOMAIN'),
+    'databaseURL': require_setting('FIREBASE_DATABASE_URL'),
+    'projectId': require_setting('FIREBASE_PROJECT_ID'),
+    'storageBucket': require_setting('FIREBASE_STORAGE_BUCKET'),
+    'messagingSenderId': require_setting('FIREBASE_MESSAGING_SENDER_ID'),
+    'appId': require_setting('FIREBASE_APP_ID'),
+    'measurementId': require_setting('FIREBASE_MEASUREMENT_ID')
 }
 
 firebase = pyrebase.initialize_app(firebaseConfig)

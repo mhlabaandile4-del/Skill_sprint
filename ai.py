@@ -3,10 +3,7 @@ import random
 import re
 
 from google import genai
-
-
-GEMINI_API_KEY = "AQ.Ab8RN6K7dhgGc4Mvnf5uXtrCwKQ0qBdOKKyBPMcfqwRynTi8Jw"
-GEMINI_MODEL = "gemini-3.5-flash"
+from config import get_setting, require_setting
 
 
 def normalize_api_key(raw_key):
@@ -214,14 +211,14 @@ def get_fallback_project_idea():
 
 def get_project_idea(prompt=PROJECT_PROMPT):
 	try:
-		key = normalize_api_key(GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", ""))
+		key = normalize_api_key(get_setting("GEMINI_API_KEY", ""))
 		if not key or len(key) < 20:
 			print("AI key is missing or invalid. Set the GEMINI_API_KEY environment variable to a valid Google AI Studio key.")
 			return get_fallback_project_idea()
 
-		client = genai.Client(api_key=key)
+		client = genai.Client(api_key=require_setting("GEMINI_API_KEY"))
 		response = client.models.generate_content(
-			model=GEMINI_MODEL,
+			model=get_setting("GEMINI_MODEL", "gemini-3.5-flash"),
 			contents=prompt,
 		)
 		

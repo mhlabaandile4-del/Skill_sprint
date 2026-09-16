@@ -3,9 +3,9 @@ import datetime
 import os
 from functools import wraps
 import streamlit as st
+from config import require_setting
 
-# Use environment variable or fallback for development
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-this-in-production")
+SECRET_KEY = require_setting("JWT_SECRET_KEY")
 
 def create_jwt_token(user_id, email, role):
     """
