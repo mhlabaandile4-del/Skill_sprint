@@ -8,16 +8,16 @@ def add_alumni_review(user_id, username, rating, review_text):
     Store alumni review in Firebase database
     """
     try:
-        review_id = datetime.now().isoformat()
+        review_timestamp = datetime.now().isoformat()
         review_data = {
             "user_id": user_id,
             "username": username,
             "rating": int(rating),
-            "review": review_text,
-            "timestamp": review_id,
+            "review": review_text.strip(),
+            "timestamp": review_timestamp,
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-        lib.db.child("alumni_reviews").child(review_id).set(review_data)
+        lib.db.child("alumni_reviews").push(review_data)
         return True
     except Exception as e:
         print(f"Error adding review: {e}")
